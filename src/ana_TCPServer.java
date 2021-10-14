@@ -30,6 +30,18 @@ public class ana_TCPServer {
             System.out.println("Unable to attach to port!");
             System.exit(1);
         }
+
+        while(true) {
+            connectionGetter();
+        }
+    }
+
+    private static void connectionGetter() {
+        Socket link = null;
+
+        try {
+            link = serverSocket.accept();
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
 }
