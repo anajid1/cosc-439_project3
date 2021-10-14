@@ -10,12 +10,12 @@ public class ana_TCPServer {
     public static void main(String[] args) throws IOException {
         System.out.println("Opening port...\n");
 
-        // Try to create a socket with a port number.
+        /* Try to create a socket with a port number. */
         try {
-            // Hard coded port number
+            /* Hard coded port number. */
             int portNumber = 20750;
 
-            // Check if any arguments were provided for a port number.
+            /* Check if any arguments were provided for a port number. */
             for(int i = 0; i < args.length; i += 2) {
                 switch (args[i]) {
                     case "-p":
@@ -27,7 +27,7 @@ public class ana_TCPServer {
                 }
             }
 
-            // Create a server object.
+            /* Create a server object. */
             serverSocket = new ServerSocket(portNumber);
         } catch (IOException e) {
             System.out.println("Unable to attach to port!");
@@ -46,15 +46,15 @@ public class ana_TCPServer {
 
         long startTime = System.currentTimeMillis();
 
-        // Set up input and output streams for socket
+        /* Set up input and output streams for socket. */
         BufferedReader in = new BufferedReader(new InputStreamReader(link.getInputStream()));
         PrintWriter out = new PrintWriter(link.getOutputStream(), true);
 
-        // print local host name
+        /* print local host name */
         String host = InetAddress.getLocalHost().getHostName();
         System.out.println("Client has established a connection to " + host);
 
-        // First message from client is client's username.
+        /* First message from client is client's username. */
         String clientUsername = in.readLine();
 
         ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername);
@@ -83,7 +83,7 @@ public class ana_TCPServer {
             } catch (IOException e) { e.printStackTrace(); }
 
             while (!message.equals("DONE")) {
-                // Append client's username to their message and print it.
+                /* Append client's username to their message and print it. */
                 String formatMessage = userName + ": " + message;
                 System.out.println(formatMessage);
 
