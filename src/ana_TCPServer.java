@@ -53,8 +53,8 @@ public class ana_TCPServer {
         PrintWriter out = new PrintWriter(link.getOutputStream(), true);
 
         /* print local host name */
-        String host = InetAddress.getLocalHost().getHostName();
-        System.out.println("Client has established a connection to " + host);
+//        String host = InetAddress.getLocalHost().getHostName();
+//        System.out.println("Client has established a connection to " + host);
 
         /* First message from client is client's username. */
         String clientUsername = in.readLine();
@@ -88,24 +88,20 @@ public class ana_TCPServer {
         }
 
         public void run() {
-        	try {
-				messageOut(userName + " has joined.");
-			} catch (IOException e) { }
-        	
-            String message = "";
             try {
-                message = in.readLine();
-            } catch (IOException e) { }
-
-            while (!message.equals("DONE")) {
-				try {
-					messageOut(userName + " " + message); 
-				} catch (IOException e) { }
-
-                try {
-                    message = in.readLine();  /* Get the next message from the client. */
-                } catch (IOException e) { }
-            }
+            	this.printChatText();
+            	messageOut(userName + " has joined.");
+            	String message = "";
+            	message = in.readLine();
+            	while (!message.equals("DONE")) {
+            		messageOut(userName + ": " + message); 
+            		message = in.readLine();  /* Get the next message from the client. */
+            	}
+            	
+            	/* Close file */
+				myFileWriter.close();
+			} catch (Exception e) { }
+            
         }
 
         /* Method used by other ClientHandlers to send their messages to their respective client. */
@@ -113,11 +109,26 @@ public class ana_TCPServer {
             out.println(message);
         }
         
+        /* Synchronized method to read from chat file. */
+        private synchronized void printChatText() throws FileNotFoundException {
+        	File file = new File("ana_chat.txt");
+        	myFileReader = new Scanner(file);
+            while (myFileReader.hasNextLine())
+                out.println(myFileReader.nextLine());
+            myFileReader.close();
+        }
+        
+        /* Synchronized method to write to chat file. */
+        private synchronized void writeToChatFile(String message) throws IOException {
+        	myFileWriter.write(message + "\n");  /* Output message in chat file. */
+        	myFileWriter.flush();  /* Flush the message instead of waiting till file closes to output message. */
+        }
+        
         /* Prints client's message to server console, chat file, and every client except the one who sent the message. */
         private void messageOut(String message) throws IOException {
-        	System.out.println(message);  /* Print message on the console */
+        	System.out.println(message);  /* Print message on the console. */
         	
-        	myFileWriter.write(message + "\n"); /* Output message in chat file. */
+        	writeToChatFile(message);
         	
         	/* Print message on all the client's console except the one who sent the message. */
             for(int i = 0; i < clientHandlerArrayList.size(); i++) {
