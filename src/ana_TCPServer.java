@@ -5,8 +5,8 @@ import java.util.Scanner;
 
 public class ana_TCPServer {
     private static ServerSocket serverSocket;
-    private static FileWriter myWriter;
-    private static Scanner myReader;
+    private static FileWriter myFileWriter;
+    private static Scanner myFileReader;
     public static ArrayList<ClientHandler> clientHandlerArrayList = new ArrayList<ClientHandler>();
 
     public static void main(String[] args) throws IOException {
@@ -60,6 +60,12 @@ public class ana_TCPServer {
         String clientUsername = in.readLine();
 
         ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername);
+        
+        /* Determine if we need to create a chat log file; file is only created if there are no client's currently connected to server. */
+        if(clientHandlerArrayList.isEmpty()) {
+        	/* No current clients connected to server therefore no chat file exists. We will create one. */
+        	myFileWriter = new FileWriter("ana_chat.txt");
+        }
 
         clientHandlerArrayList.add(clientHandler);
 
@@ -82,30 +88,43 @@ public class ana_TCPServer {
         }
 
         public void run() {
+        	try {
+				messageOut(userName + " has joined.");
+			} catch (IOException e) { }
+        	
             String message = "";
             try {
                 message = in.readLine();
-            } catch (IOException e) { e.printStackTrace(); }
+            } catch (IOException e) { }
 
             while (!message.equals("DONE")) {
-                /* Append client's username to their message and print it. */
-                String formatMessage = userName + ": " + message;
-                System.out.println(formatMessage);
-
-                for(int i = 0; i < clientHandlerArrayList.size(); i++) {
-                    ClientHandler tempClientHandler = clientHandlerArrayList.get(i);
-                    if(!tempClientHandler.equals(this))
-                        tempClientHandler.echo(formatMessage);
-                }
+				try {
+					messageOut(userName + " " + message); 
+				} catch (IOException e) { }
 
                 try {
-                    message = in.readLine();
-                } catch (IOException e) { e.printStackTrace(); }
+                    message = in.readLine();  /* Get the next message from the client. */
+                } catch (IOException e) { }
             }
         }
 
+        /* Method used by other ClientHandlers to send their messages to their respective client. */
         public void echo(String message) {
             out.println(message);
+        }
+        
+        /* Prints client's message to server console, chat file, and every client except the one who sent the message. */
+        private void messageOut(String message) throws IOException {
+        	System.out.println(message);  /* Print message on the console */
+        	
+        	myFileWriter.write(message + "\n"); /* Output message in chat file. */
+        	
+        	/* Print message on all the client's console except the one who sent the message. */
+            for(int i = 0; i < clientHandlerArrayList.size(); i++) {
+                ClientHandler tempClientHandler = clientHandlerArrayList.get(i);
+                if(!tempClientHandler.equals(this))
+                    tempClientHandler.echo(message);
+            }
         }
     }
 
