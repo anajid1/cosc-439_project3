@@ -73,10 +73,15 @@ public class ana_TCPClient {
 
         messageSender.start();
 
+        String spaces = "  ";
+        for(int i = 0; i < username.length(); i++)
+    		spaces += " ";
+        
         String response = "";
         response = in.readLine();
         while(!response.equals("DONE")) {
-            System.out.println(response);
+        	
+            System.out.print("\r" + spaces + "\r" + response + "\n" + username + " > ");
             response = in.readLine();
         }
     }
@@ -96,7 +101,7 @@ public class ana_TCPClient {
             String message = "";
 
             do {
-                System.out.print("Enter message: ");
+                System.out.print(username + "> ");
                 try {
                     message = userEntry.readLine();
                 } catch (IOException e) { e.printStackTrace(); }
