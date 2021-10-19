@@ -1,11 +1,13 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class ana_TCPServer {
     private static ServerSocket serverSocket;
-    FileWriter myWriter;
-    Scanner myReader;
+    private static FileWriter myWriter;
+    private static Scanner myReader;
+    public static ArrayList<ClientHandler> clientHandlerArrayList = new ArrayList<ClientHandler>();
 
     public static void main(String[] args) throws IOException {
         System.out.println("Opening port...\n");
@@ -58,6 +60,9 @@ public class ana_TCPServer {
         String clientUsername = in.readLine();
 
         ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername);
+
+        clientHandlerArrayList.add(clientHandler);
+
         clientHandler.start();
     }
 
@@ -87,10 +92,20 @@ public class ana_TCPServer {
                 String formatMessage = userName + ": " + message;
                 System.out.println(formatMessage);
 
+                for(int i = 0; i < clientHandlerArrayList.size(); i++) {
+                    ClientHandler tempClientHandler = clientHandlerArrayList.get(i);
+                    if(!tempClientHandler.equals(this))
+                        tempClientHandler.echo(formatMessage);
+                }
+
                 try {
                     message = in.readLine();
                 } catch (IOException e) { e.printStackTrace(); }
             }
+        }
+
+        public void echo(String message) {
+            out.println(message);
         }
     }
 
