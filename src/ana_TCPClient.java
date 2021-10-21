@@ -4,6 +4,7 @@ import java.util.Scanner;
 
 public class ana_TCPClient {
     private static InetAddress host;
+    public static boolean wantsToSend = true;
 
     /* Declare and initialize with hard coded values. May change from arguments. */
     private static String hostAddress = "localhost";
@@ -79,12 +80,11 @@ public class ana_TCPClient {
         
         String response = "";
         response = in.readLine();
-        while(true) {
-            System.out.print("\r" + spaces + "\r" + response);
+        while(!response.equals("DONE")) {
+            System.out.print("\r" + spaces + "\r" + response + "\n");
+            if(wantsToSend)
+                System.out.print(username + "> ");
             response = in.readLine();
-            if(response.equals("DONE"))
-                break;
-            System.out.print("\n" + username + " > ");
         }
     }
 
@@ -109,6 +109,7 @@ public class ana_TCPClient {
                 } catch (IOException e) { e.printStackTrace(); }
                 out.println(message);
             } while (!message.equals("DONE"));
+            wantsToSend = false;
         }
     }
 }
