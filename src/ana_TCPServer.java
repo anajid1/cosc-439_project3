@@ -6,7 +6,6 @@ import java.util.Scanner;
 public class ana_TCPServer {
     private static ServerSocket serverSocket;
     private static FileWriter myFileWriter;
-    private static Scanner myFileReader;
     public static ArrayList<ClientHandler> clientHandlerArrayList = new ArrayList<ClientHandler>();
 
     public static void main(String[] args) throws IOException {
@@ -52,9 +51,9 @@ public class ana_TCPServer {
         BufferedReader in = new BufferedReader(new InputStreamReader(link.getInputStream()));
         PrintWriter out = new PrintWriter(link.getOutputStream(), true);
 
-        /* print local host name */
-//        String host = InetAddress.getLocalHost().getHostName();
-//        System.out.println("Client has established a connection to " + host);
+        /* print local host name on console. */
+        String host = InetAddress.getLocalHost().getHostName();
+        System.out.println("Client has established a connection to " + host);
 
         /* First message from client is client's username. */
         String clientUsername = in.readLine();
@@ -79,6 +78,11 @@ public class ana_TCPServer {
         long startTime;
         String userName;
 
+        /* Values will be used to calculate connection time to a client. */
+        private final static int MS_IN_HOUR = 3600000;
+        private final static int MS_IN_MINUTES = 60000;
+        private final static int MS_IN_SECONDS = 1000;
+
         public ClientHandler(Socket link, BufferedReader in, PrintWriter out, long startTime, String userName) {
             this.link = link;
             this.in = in;
@@ -89,30 +93,77 @@ public class ana_TCPServer {
 
         public void run() {
             try {
-            	this.printChatText();
+                File file = new File("ana_chat.txt");
+            	this.printChatText(file);
             	messageOut(userName + " has joined.");
+                int numMessages = 0;
             	String message = "";
             	message = in.readLine();
             	while (!message.equals("DONE")) {
-            		messageOut(userName + ": " + message); 
+            		messageOut(userName + ": " + message);
+                    numMessages++;
             		message = in.readLine();  /* Get the next message from the client. */
             	}
             	
             	/* Close file */
 				myFileWriter.close();
+
+                // Send a report back to client.
+                out.println("Server received " + numMessages + " messages");
+
+                // Get connection time and send it to client.
+                long endTime = System.currentTimeMillis();
+                // MS is added to name since unit of time is in milliseconds for better readability.
+                long timeMS = endTime-startTime;
+
+                /* Currently, timeMS holds total time. Eventually timeMS will only hold remaining time that can't fit into
+                 * hours, minutes, and seconds.
+                 */
+
+                int timeHours = 0;
+                int timeMinutes = 0;
+                int timeSeconds = 0;
+
+                // Get hours.
+                if(timeMS >= MS_IN_HOUR) {
+                    timeHours = (int) timeMS/MS_IN_HOUR;
+                    timeMS = timeMS % MS_IN_HOUR;
+                }
+
+                // Get minutes.
+                if(timeMS >= MS_IN_MINUTES) {
+                    timeMinutes = (int) timeMS/MS_IN_MINUTES;
+                    timeMS = timeMS % MS_IN_MINUTES;
+                }
+
+                // Get seconds.
+                if(timeMS >= MS_IN_SECONDS) {
+                    timeSeconds = (int) timeMS/MS_IN_SECONDS;
+                    timeMS = timeMS % MS_IN_SECONDS;
+                }
+
+                // Send time to client.
+                out.println(timeHours + "::" + timeMinutes + "::" + timeSeconds + "::" + timeMS);
+
+                /* Let client know there are no more messages from the server. */
+                out.println("DONE");
+
+                if(clientHandlerArrayList.size() == 1) {
+                    file.delete();
+                }
+                clientHandlerArrayList.remove(this);
 			} catch (Exception e) { }
             
         }
 
-        /* Method used by other ClientHandlers to send their messages to their respective client. */
+        /* Method used by other ClientHandlers to send their messages to this. */
         public void echo(String message) {
             out.println(message);
         }
         
-        /* Synchronized method to read from chat file. */
-        private synchronized void printChatText() throws FileNotFoundException {
-        	File file = new File("ana_chat.txt");
-        	myFileReader = new Scanner(file);
+        /* Method to read from chat file. */
+        private void printChatText(File file) throws FileNotFoundException {
+        	Scanner myFileReader = new Scanner(file);
             while (myFileReader.hasNextLine())
                 out.println(myFileReader.nextLine());
             myFileReader.close();
