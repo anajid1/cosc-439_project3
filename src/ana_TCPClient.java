@@ -79,10 +79,12 @@ public class ana_TCPClient {
         
         String response = "";
         response = in.readLine();
-        while(!response.equals("DONE")) {
-        	
-            System.out.print("\r" + spaces + "\r" + response + "\n" + username + " > ");
+        while(true) {
+            System.out.print("\r" + spaces + "\r" + response);
             response = in.readLine();
+            if(response.equals("DONE"))
+                break;
+            System.out.print("\n" + username + " > ");
         }
     }
 
