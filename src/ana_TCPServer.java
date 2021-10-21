@@ -52,13 +52,13 @@ public class ana_TCPServer {
         PrintWriter out = new PrintWriter(link.getOutputStream(), true);
 
         /* print local host name on console. */
-        String host = InetAddress.getLocalHost().getHostName();
-        System.out.println("Client has established a connection to " + host);
+        String hostName = InetAddress.getLocalHost().getHostName();
+        System.out.println("Client has established a connection to " + hostName);
 
         /* First message from client is client's username. */
         String clientUsername = in.readLine();
 
-        ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername);
+        ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername, hostName);
         
         /* Determine if we need to create a chat log file; file is only created if there are no client's currently connected to server. */
         if(clientHandlerArrayList.isEmpty()) {
@@ -72,23 +72,26 @@ public class ana_TCPServer {
     }
 
     public static class ClientHandler extends Thread {
-        Socket link;
-        BufferedReader in;
-        PrintWriter out;
-        long startTime;
-        String userName;
+        private Socket link;
+        private BufferedReader in;
+        private PrintWriter out;
+        private long startTime;
+        private String userName;
+        private String hostName;
 
         /* Values will be used to calculate connection time to a client. */
         private final static int MS_IN_HOUR = 3600000;
         private final static int MS_IN_MINUTES = 60000;
         private final static int MS_IN_SECONDS = 1000;
 
-        public ClientHandler(Socket link, BufferedReader in, PrintWriter out, long startTime, String userName) {
+        public ClientHandler(Socket link, BufferedReader in, PrintWriter out, long startTime, String userName,
+                             String hostName) {
             this.link = link;
             this.in = in;
             this.out = out;
             this.startTime = startTime;
             this.userName = userName;
+            this.hostName = hostName;
         }
 
         public void run() {
@@ -104,9 +107,13 @@ public class ana_TCPServer {
                     numMessages++;
             		message = in.readLine();  /* Get the next message from the client. */
             	}
-            	
+
+                messageOut(userName + " has left.");
+
             	/* Close file */
-				myFileWriter.close();
+                if(clientHandlerArrayList.size() == 1) {
+                    myFileWriter.close();
+                }
 
                 // Send a report back to client.
                 out.println("Server received " + numMessages + " messages");
@@ -148,11 +155,13 @@ public class ana_TCPServer {
                 /* Let client know there are no more messages from the server. */
                 out.println("DONE");
 
+                System.out.println("Client has established a connection to " + hostName);
+
                 if(clientHandlerArrayList.size() == 1) {
                     file.delete();
                 }
                 clientHandlerArrayList.remove(this);
-			} catch (Exception e) { }
+			} catch (Exception e) { e.printStackTrace(); }
             
         }
 
