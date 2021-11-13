@@ -33,12 +33,22 @@ public class ana_TCPServer {
         try {
             /* Hard coded port number. */
             int portNumber = 20750;
+            
+            /* g, n are used to calculate secret key. */
+            int g = 1019;
+            int n = 1823;
 
             /* Check if any arguments were provided for a port number. */
             for(int i = 0; i < args.length; i += 2) {
                 switch (args[i]) {
                     case "-p":
-                        portNumber = Integer.parseInt(args[1]);
+                        portNumber = Integer.parseInt(args[i+1]);
+                        break;
+                    case "-g":
+                        g = Integer.parseInt(args[i+1]);
+                        break;
+                    case "-n":
+                        n = Integer.parseInt(args[i+1]);
                         break;
                     default:
                         System.out.println("Invalid Arguments! \nTerminating Program...");
@@ -78,6 +88,8 @@ public class ana_TCPServer {
         /* Print local host name on console for server's record. */
         String hostName = InetAddress.getLocalHost().getHostName();
         System.out.println("Client has established a connection to " + hostName);
+        
+        /********************** HANDSHAKE **********************/
 
         /* First message from client is client's username. */
         String clientUsername = in.readLine();
