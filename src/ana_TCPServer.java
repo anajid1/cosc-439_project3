@@ -2,6 +2,8 @@ import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Random;
+import java.math.BigInteger;
 
 /*
  * Name: Abdullah Najid
@@ -22,6 +24,13 @@ public class ana_TCPServer {
 
     /* Used to have a reference for the multiple client handler threads. */
     public static ArrayList<ClientHandler> clientHandlerArrayList = new ArrayList<ClientHandler>();
+    
+    /* Hard coded port number. */
+    public static int portNumber = 20750;
+    
+    /* g, n are used to calculate secret key. */
+    private static int g = 1019;
+    private static int n = 1823;
 
     /* Main method that creates a socket using either the predefined port number or one provided in args and then
      * keeps trying to get connections to clients.
@@ -31,13 +40,6 @@ public class ana_TCPServer {
 
         /* Try to create a socket with a port number. */
         try {
-            /* Hard coded port number. */
-            int portNumber = 20750;
-            
-            /* g, n are used to calculate secret key. */
-            int g = 1019;
-            int n = 1823;
-
             /* Check if any arguments were provided for a port number. */
             for(int i = 0; i < args.length; i += 2) {
                 switch (args[i]) {
@@ -90,8 +92,29 @@ public class ana_TCPServer {
         System.out.println("Client has established a connection to " + hostName);
         
         /********************** HANDSHAKE **********************/
+        /* Send client g and n */
+        out.println(g);
+        out.println(n);
+        
+        BigInteger clientPartialKey = new BigInteger(in.readLine());
+        
+        BigInteger gBig = new BigInteger(""+g);
+        BigInteger nBig = new BigInteger(""+n);
+        
+        /* 100 <= y <= 200 */
+        Random rand = new Random();
+        BigInteger y = new BigInteger("" + (rand.nextInt(101) + 100));
+        
+        BigInteger serverPartialKey = gBig.modPow(y, nBig);
+        out.println(serverPartialKey.toString());
+        
+        BigInteger keyBig = clientPartialKey.modPow(y, nBig);
+        String keyStr = keyBig.toString();
+        System.out.println("key = " + keyStr);
+        String bytePad = Cryptography.getBytePad(keyStr);
+        System.out.println("Byte-Pad = " + bytePad);
 
-        /* First message from client is client's username. */
+        /* First message from client is client's user-name. */
         String clientUsername = in.readLine();
 
         /* Create client handler thread to manage the connection. */
@@ -110,6 +133,7 @@ public class ana_TCPServer {
         /* Start the thread that will manage the connection to the client. */
         clientHandler.start();
     }
+    
 
     /* Threaded class that will manage a client connection. */
     public static class ClientHandler extends Thread {

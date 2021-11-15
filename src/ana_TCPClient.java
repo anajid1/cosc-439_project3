@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
+import java.util.Random;
+import java.math.BigInteger;
 
 /*
  * Name: Abdullah Najid
@@ -82,8 +84,28 @@ public class ana_TCPClient {
         // Set up input and output streams for the connection
         BufferedReader in = new BufferedReader(new InputStreamReader(link.getInputStream()));
         PrintWriter out = new PrintWriter(link.getOutputStream(), true);
-
-        /* Send server username. */
+        
+        /********************** HANDSHAKE **********************/
+        BigInteger g = new BigInteger(in.readLine());
+        BigInteger n = new BigInteger(in.readLine());
+        
+        /* 100 <= x <= 200 */
+        Random rand = new Random();
+        BigInteger x = new BigInteger("" + (rand.nextInt(101) + 100));
+        
+        BigInteger clientPartialKey = g.modPow(x, n);
+        out.println(clientPartialKey.toString());
+        
+        BigInteger serverPartialKey = new BigInteger(in.readLine());
+        
+        BigInteger keyBig = serverPartialKey.modPow(x, n);
+        String keyStr = keyBig.toString();
+        System.out.println("key = " + keyStr);
+        
+        String bytePad = Cryptography.getBytePad(keyStr);
+        System.out.println(bytePad);
+        
+        /* Send server user-name. */
         out.println(username);
 
         /* Create and start thread for prompting user for messages to send to server. */
@@ -107,6 +129,7 @@ public class ana_TCPClient {
             response = in.readLine();
         }
     }
+    
 
     /* Threaded class used to send messages to server. */
     public static class MessageSender extends Thread {
