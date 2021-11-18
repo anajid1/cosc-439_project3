@@ -106,7 +106,7 @@ public class ana_TCPClient {
         System.out.println(bytePad);
         
         /* Send server user-name. */
-        out.println(username);
+        out.println(Cryptography.encrypt(bytePad, username));
 
         /* Create and start thread for prompting user for messages to send to server. */
         MessageSender messageSender = new MessageSender(link, out);

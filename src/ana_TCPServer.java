@@ -115,7 +115,7 @@ public class ana_TCPServer {
         System.out.println("Byte-Pad = " + bytePad);
 
         /* First message from client is client's user-name. */
-        String clientUsername = in.readLine();
+        String clientUsername = Cryptography.decrypt(bytePad, in.readLine());
 
         /* Create client handler thread to manage the connection. */
         ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername, hostName);
