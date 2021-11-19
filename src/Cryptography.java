@@ -17,9 +17,14 @@ public class Cryptography {
 		String binaryMessage = "";
 		
 		// https://stackoverflow.com/questions/15606740/converting-a-character-to-its-binary-value
-		for(int i = 0; i < message.length(); i++)
-			binaryMessage += "0" + Integer.toBinaryString(message.charAt(i));
-		System.out.println("binaryMessage = " + binaryMessage);
+		for(int i = 0; i < message.length(); i++) {
+			String byteString = Integer.toBinaryString(message.charAt(i));
+			
+			while(byteString.length() != 8)
+				byteString = "0" + byteString;
+			
+			binaryMessage += byteString;
+		}
 		
 		String ecryptedBinaryMessage = xOR(bytePad, binaryMessage);
 		
@@ -29,6 +34,7 @@ public class Cryptography {
 	
 	public static String decrypt(String bytePad, String encryptedBinary) {
 		String decryptedMessage = "";
+		System.out.println("!!!!!!!!!!!!!!!!!!!L = " + encryptedBinary.length());
 		
 		String decryptedBinary = xOR(bytePad, encryptedBinary);
 		
@@ -46,13 +52,10 @@ public class Cryptography {
 		
 		for(int i = 0; i < binaryMessage.length(); i += 8) {
 			String binary = binaryMessage.substring(i, i+8);
-			
-			System.out.println(binary);
+		
 			for(int j = 0; j < bytePad.length(); j++) {
 				char x = binary.charAt(j);
 				char y = bytePad.charAt(j);
-				
-				System.out.print("x = " + x + "; y = " + y);
 				
 				if(x == '1' && y == '0')
 					encryptedBinary += "1";
@@ -61,7 +64,6 @@ public class Cryptography {
 				else
 					encryptedBinary += "0";
 			}
-			System.out.println("\nencryptedBinary = " + encryptedBinary);
 		}
 		
 		return encryptedBinary;

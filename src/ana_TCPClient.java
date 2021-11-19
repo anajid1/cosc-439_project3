@@ -28,6 +28,8 @@ public class ana_TCPClient {
 
     /* Declare and initialize username to an empty string. Will prompt user for username if not provided. */
     private static String username = "";
+    
+    private static String bytePad = "";
 
     /* Get arguments and a username; call serverHandler method. */
     public static void main(String[] args) {
@@ -65,29 +67,54 @@ public class ana_TCPClient {
             System.out.println("Host ID not found!");
             System.exit(1);
         }
-        try {
-            /* Run serverHandler method that will create and handle server connection. */
-            serverHandler(Integer.parseInt(portNumber));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        /* Run serverHandler method that will create and handle server connection. */
+		serverHandler(Integer.parseInt(portNumber));
     }
 
 
     /* Method establishes a connection with server and prints any messages from the server which may be an
      * echo of a message from another client. */
-    private static void serverHandler(int portNumber) throws IOException {
+    private static void serverHandler(int portNumber) {
         Socket link = null;
 
-        link = new Socket(host, portNumber);
+        try {
+			link = new Socket(host, portNumber);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
         // Set up input and output streams for the connection
-        BufferedReader in = new BufferedReader(new InputStreamReader(link.getInputStream()));
-        PrintWriter out = new PrintWriter(link.getOutputStream(), true);
+        BufferedReader in = null;
+		try {
+			in = new BufferedReader(new InputStreamReader(link.getInputStream()));
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+        PrintWriter out = null;
+		try {
+			out = new PrintWriter(link.getOutputStream(), true);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         
         /********************** HANDSHAKE **********************/
-        BigInteger g = new BigInteger(in.readLine());
-        BigInteger n = new BigInteger(in.readLine());
+        BigInteger g = null;
+		try {
+			g = new BigInteger(in.readLine());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        BigInteger n = null;
+		try {
+			n = new BigInteger(in.readLine());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         
         /* 100 <= x <= 200 */
         Random rand = new Random();
@@ -96,13 +123,19 @@ public class ana_TCPClient {
         BigInteger clientPartialKey = g.modPow(x, n);
         out.println(clientPartialKey.toString());
         
-        BigInteger serverPartialKey = new BigInteger(in.readLine());
+        BigInteger serverPartialKey = null;
+		try {
+			serverPartialKey = new BigInteger(in.readLine());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         
         BigInteger keyBig = serverPartialKey.modPow(x, n);
         String keyStr = keyBig.toString();
         System.out.println("key = " + keyStr);
         
-        String bytePad = Cryptography.getBytePad(keyStr);
+        bytePad = Cryptography.getBytePad(keyStr);
         System.out.println(bytePad);
         
         /* Send server user-name. */
@@ -119,14 +152,24 @@ public class ana_TCPClient {
 
         /* Keep printing messages from server till server sends DONE. */
         String response = "";
-        response = in.readLine();
+        try {
+			response = decryptMessage(in.readLine());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         while(!response.equals("DONE")) {
             /* Clear current user prompt and put the message. */
             System.out.print("\r" + spaces + "\r" + response + "\n");
             if(wantsToSend)
                 /* User still wants to send messages so print out a new prompt. */
                 System.out.print(username + "> ");
-            response = in.readLine();
+            try {
+				response = decryptMessage(in.readLine());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
     }
     
@@ -154,11 +197,19 @@ public class ana_TCPClient {
                 try {
                     message = userEntry.readLine();
                 } catch (IOException e) { e.printStackTrace(); }
-                out.println(message);
+                out.println(enryptMessage(message));
             } while (!message.equals("DONE"));
 
             /* Let serverHandler thread know it doesn't need to reprint user prompt anymore. */
             wantsToSend = false;
         }
+    }
+    
+    public static String decryptMessage(String encryptedMessage) {
+    	return Cryptography.decrypt(bytePad, encryptedMessage);
+    }
+    
+    public static String enryptMessage(String message) {
+    	return Cryptography.encrypt(bytePad, message);
     }
 }

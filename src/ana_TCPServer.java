@@ -118,7 +118,7 @@ public class ana_TCPServer {
         String clientUsername = Cryptography.decrypt(bytePad, in.readLine());
 
         /* Create client handler thread to manage the connection. */
-        ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername, hostName);
+        ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername, hostName, bytePad);
         
         /* Determine if we need to create a chat log file;
          * file is only created if there are no client's currently connected to server.
@@ -143,6 +143,7 @@ public class ana_TCPServer {
         private long startTime;
         private String userName;
         private String hostName;
+        private String bytePad;
 
         /* Values will be used to calculate connection time to a client. */
         private final static int MS_IN_HOUR = 3600000;
@@ -151,13 +152,14 @@ public class ana_TCPServer {
 
         /* Constructor */
         public ClientHandler(Socket link, BufferedReader in, PrintWriter out, long startTime, String userName,
-                             String hostName) {
+                             String hostName, String bytePad) {
             this.link = link;
             this.in = in;
             this.out = out;
             this.startTime = startTime;
             this.userName = userName;
             this.hostName = hostName;
+            this.bytePad = bytePad;
         }
 
         /*
@@ -176,11 +178,11 @@ public class ana_TCPServer {
                 /* Keep getting messages from client and echo them to various sources. */
                 int numMessages = 0;
             	String message = "";
-            	message = in.readLine();
+            	message = getDecryptedMessage();
             	while (!message.equals("DONE")) {
             		messageOut(userName + ": " + message);
                     numMessages++;
-            		message = in.readLine();  /* Get the next message from the client. */
+            		message = getDecryptedMessage();  /* Get the next message from the client. */
             	}
 
                 /* Client wants to end connection. */
@@ -197,7 +199,7 @@ public class ana_TCPServer {
                  * Send a report back to client.
                  */
 
-                out.println("Server received " + numMessages + " messages");
+                sendEncryptedMessage("Server received " + numMessages + " messages");
 
                 // Get connection time and send it to client.
                 long endTime = System.currentTimeMillis();
@@ -230,10 +232,10 @@ public class ana_TCPServer {
                 }
 
                 // Send time to client.
-                out.println(timeHours + "::" + timeMinutes + "::" + timeSeconds + "::" + timeMS);
+                sendEncryptedMessage(timeHours + "::" + timeMinutes + "::" + timeSeconds + "::" + timeMS);
 
                 /* Let client know there are no more messages from the server. */
-                out.println("DONE");
+                sendEncryptedMessage("DONE");
 
                 /* Keep a record of client disconnecting on server console. */
                 System.out.println(hostName + " has disconnected.");
@@ -258,7 +260,7 @@ public class ana_TCPServer {
         private void printChatText(File file) throws FileNotFoundException {
         	Scanner myFileReader = new Scanner(file);
             while (myFileReader.hasNextLine())
-                out.println(myFileReader.nextLine());
+                sendEncryptedMessage(myFileReader.nextLine());
             myFileReader.close();
         }
         
@@ -277,8 +279,18 @@ public class ana_TCPServer {
             for(int i = 0; i < clientHandlerArrayList.size(); i++) {
                 ClientHandler tempClientHandler = clientHandlerArrayList.get(i);
                 if(!tempClientHandler.equals(this))
-                    tempClientHandler.echo(message);
+                    tempClientHandler.echo(Cryptography.decrypt(tempClientHandler.bytePad, message));
             }
+        }
+        
+        private void sendEncryptedMessage(String message) {
+        	String encryptedMessage = Cryptography.encrypt(bytePad, message);
+        	out.println(encryptedMessage);
+        }
+        
+        private String getDecryptedMessage() throws IOException {
+        	String encryptedMessage = in.readLine();
+        	return Cryptography.decrypt(bytePad, encryptedMessage);
         }
     }
 
