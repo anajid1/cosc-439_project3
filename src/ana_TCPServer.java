@@ -110,9 +110,11 @@ public class ana_TCPServer {
         
         BigInteger keyBig = clientPartialKey.modPow(y, nBig);
         String keyStr = keyBig.toString();
-        System.out.println("key = " + keyStr);
+        System.out.println("Key: " + keyStr);
         String bytePad = Cryptography.getBytePad(keyStr);
-        System.out.println("Byte-Pad = " + bytePad);
+        System.out.println("Byte-Pad: " + bytePad);
+        /********************** END HANDSHAKE **********************/
+        /* All messages will now be encrypted/decrypted. */
 
         /* First message from client is client's user-name. */
         String clientUsername = Cryptography.decrypt(bytePad, in.readLine());
@@ -253,7 +255,7 @@ public class ana_TCPServer {
 
         /* Method used by other ClientHandlers to send their messages to this client handler. */
         public void echo(String message) {
-            out.println(message);
+            sendEncryptedMessage(message);
         }
         
         /* Method to read from chat file. */
@@ -278,8 +280,9 @@ public class ana_TCPServer {
 
             for(int i = 0; i < clientHandlerArrayList.size(); i++) {
                 ClientHandler tempClientHandler = clientHandlerArrayList.get(i);
-                if(!tempClientHandler.equals(this))
-                    tempClientHandler.echo(Cryptography.decrypt(tempClientHandler.bytePad, message));
+                if(!tempClientHandler.equals(this)) {
+                    tempClientHandler.echo(message);
+                }
             }
         }
         

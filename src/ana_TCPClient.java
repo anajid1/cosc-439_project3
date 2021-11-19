@@ -32,7 +32,7 @@ public class ana_TCPClient {
     private static String bytePad = "";
 
     /* Get arguments and a username; call serverHandler method. */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NumberFormatException, IOException {
         /* Get 3 command line arguments: username (-u), server host address (-h), server port number (-p). */
         /* Go through each argument and change values for each respective variable. */
         for(int i = 0; i < args.length; i += 2) {
@@ -58,6 +58,7 @@ public class ana_TCPClient {
             Scanner keyboard = new Scanner(System.in);
             System.out.print("Please enter a username: ");
             username = keyboard.nextLine();
+            keyboard.close();
         }
 
         try {
@@ -74,47 +75,18 @@ public class ana_TCPClient {
 
     /* Method establishes a connection with server and prints any messages from the server which may be an
      * echo of a message from another client. */
-    private static void serverHandler(int portNumber) {
+    private static void serverHandler(int portNumber) throws IOException {
         Socket link = null;
 
-        try {
-			link = new Socket(host, portNumber);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
+        link = new Socket(host, portNumber);
+        
         // Set up input and output streams for the connection
-        BufferedReader in = null;
-		try {
-			in = new BufferedReader(new InputStreamReader(link.getInputStream()));
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-        PrintWriter out = null;
-		try {
-			out = new PrintWriter(link.getOutputStream(), true);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        BufferedReader in = new BufferedReader(new InputStreamReader(link.getInputStream()));
+        PrintWriter out = new PrintWriter(link.getOutputStream(), true);
         
         /********************** HANDSHAKE **********************/
-        BigInteger g = null;
-		try {
-			g = new BigInteger(in.readLine());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        BigInteger n = null;
-		try {
-			n = new BigInteger(in.readLine());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        BigInteger g = new BigInteger(in.readLine());
+        BigInteger n = new BigInteger(in.readLine());
         
         /* 100 <= x <= 200 */
         Random rand = new Random();
@@ -124,52 +96,51 @@ public class ana_TCPClient {
         out.println(clientPartialKey.toString());
         
         BigInteger serverPartialKey = null;
-		try {
 			serverPartialKey = new BigInteger(in.readLine());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
         
         BigInteger keyBig = serverPartialKey.modPow(x, n);
         String keyStr = keyBig.toString();
-        System.out.println("key = " + keyStr);
+        System.out.println("Key: " + keyStr);
         
         bytePad = Cryptography.getBytePad(keyStr);
-        System.out.println(bytePad);
+        System.out.println("Byte-Pad: " + bytePad);
+        /********************** END HANDSHAKE **********************/
+        /* All messages will now be encrypted/decrypted. */
         
-        /* Send server user-name. */
+        /* Send server encrypted user-name. */
         out.println(Cryptography.encrypt(bytePad, username));
 
         /* Create and start thread for prompting user for messages to send to server. */
         MessageSender messageSender = new MessageSender(link, out);
         messageSender.start();
 
-        /* Calculate spaces to clear user prompt on current console line for a message. */
+        /* Calculate spaces and backspaces to clear user prompt on current console line for a message. */
         String spaces = "  ";
-        for(int i = 0; i < username.length(); i++)
+        String backSpaces = "\b\b";
+        for(int i = 0; i < username.length(); i++) {
     		spaces += " ";
+    		backSpaces += "\b";
+        }
 
         /* Keep printing messages from server till server sends DONE. */
-        String response = "";
-        try {
-			response = decryptMessage(in.readLine());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        String response = decryptMessage(in.readLine());
         while(!response.equals("DONE")) {
             /* Clear current user prompt and put the message. */
-            System.out.print("\r" + spaces + "\r" + response + "\n");
+            System.out.println(backSpaces + spaces + backSpaces + response);
             if(wantsToSend)
                 /* User still wants to send messages so print out a new prompt. */
                 System.out.print(username + "> ");
-            try {
 				response = decryptMessage(in.readLine());
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+        }
+        
+        // Close connection.
+        try {
+            System.out.println("\n!!!!! Closing connection... !!!!!");
+            link.close();
+        } catch (IOException e) {
+            System.out.println("Unable to disconnect!");
+            System.exit(1);
         }
     }
     

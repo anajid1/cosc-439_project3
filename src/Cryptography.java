@@ -1,4 +1,11 @@
-
+/*
+ * Name: Abdullah Najid
+ * Date: 10-21-2021
+ * Class: COSC 439
+ * Professor: Dr. Tehranipour
+ * Project #2
+ * Cryptography: Helper class that has methods used by both the Client and Server class.
+ */
 public class Cryptography {
 
 	public static String getBytePad(String key) {
@@ -34,7 +41,6 @@ public class Cryptography {
 	
 	public static String decrypt(String bytePad, String encryptedBinary) {
 		String decryptedMessage = "";
-		System.out.println("!!!!!!!!!!!!!!!!!!!L = " + encryptedBinary.length());
 		
 		String decryptedBinary = xOR(bytePad, encryptedBinary);
 		
