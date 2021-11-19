@@ -122,7 +122,14 @@ public class ana_TCPServer {
         /* Create client handler thread to manage the connection. */
         ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername, hostName, bytePad);
         
-        /* Determine if we need to create a chat log file;
+        createClientHandlerArrayList(clientHandler);
+
+        /* Start the thread that will manage the connection to the client. */
+        clientHandler.start();
+    }
+    
+    private synchronized static void createClientHandlerArrayList(ClientHandler clientHandler) throws IOException {
+    	/* Determine if we need to create a chat log file;
          * file is only created if there are no client's currently connected to server.
          */
         if(clientHandlerArrayList.isEmpty()) {
@@ -131,9 +138,6 @@ public class ana_TCPServer {
         }
 
         clientHandlerArrayList.add(clientHandler);
-
-        /* Start the thread that will manage the connection to the client. */
-        clientHandler.start();
     }
     
 
@@ -278,7 +282,11 @@ public class ana_TCPServer {
         	
         	writeToChatFile(message);
 
-            for(int i = 0; i < clientHandlerArrayList.size(); i++) {
+        	printToClients(message);
+        }
+        
+        private synchronized void printToClients(String message) {
+        	for(int i = 0; i < clientHandlerArrayList.size(); i++) {
                 ClientHandler tempClientHandler = clientHandlerArrayList.get(i);
                 if(!tempClientHandler.equals(this)) {
                     tempClientHandler.echo(message);
