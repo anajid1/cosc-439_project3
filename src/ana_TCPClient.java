@@ -18,6 +18,8 @@ import java.math.BigInteger;
  */
 public class ana_TCPClient {
     private static InetAddress host;  /* Used to connect to server. */
+    
+    public static Scanner keyboard = new Scanner(System.in);
 
     /* Used by MessageSender thread to let ServerHandler thread know if it needs to print a new prompt. */
     public static boolean wantsToSend = true;
@@ -55,10 +57,8 @@ public class ana_TCPClient {
         /* Determine if username was provided. */
         if(username.isEmpty()) {
             /* Get a username from user. */
-            Scanner keyboard = new Scanner(System.in);
             System.out.print("Please enter a username: ");
             username = keyboard.nextLine();
-            keyboard.close();
         }
 
         try {
@@ -76,9 +76,7 @@ public class ana_TCPClient {
     /* Method establishes a connection with server and prints any messages from the server which may be an
      * echo of a message from another client. */
     private static void serverHandler(int portNumber) throws IOException {
-        Socket link = null;
-
-        link = new Socket(host, portNumber);
+        Socket link = new Socket(host, portNumber);
         
         // Set up input and output streams for the connection
         BufferedReader in = new BufferedReader(new InputStreamReader(link.getInputStream()));
@@ -127,7 +125,7 @@ public class ana_TCPClient {
         String response = decryptMessage(in.readLine());
         while(!response.equals("DONE")) {
             /* Clear current user prompt and put the message. */
-            System.out.println(backSpaces + spaces + backSpaces + response);
+            System.out.print(backSpaces + spaces + backSpaces + response + "\n");
             if(wantsToSend)
                 /* User still wants to send messages so print out a new prompt. */
                 System.out.print(username + "> ");
@@ -156,18 +154,12 @@ public class ana_TCPClient {
             this.out = out;
         }
 
-        /* Prompts user to send messages. */
+        /* Keep prompting and sending user messages till they enter DONE. */
         public void run() {
-            // Set up stream for keyboard entry
-            BufferedReader userEntry = new BufferedReader(new InputStreamReader(System.in));
-            String message = "";
-
-            /* Keep prompting and sending user messages till they enter DONE. */
+        	String message = "";
             do {
                 System.out.print(username + "> ");
-                try {
-                    message = userEntry.readLine();
-                } catch (IOException e) { e.printStackTrace(); }
+                message = keyboard.nextLine();
                 out.println(enryptMessage(message));
             } while (!message.equals("DONE"));
 
