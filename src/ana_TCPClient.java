@@ -6,14 +6,15 @@ import java.math.BigInteger;
 
 /*
  * Name: Abdullah Najid
- * Date: 10-21-2021
+ * Date: 11-23-2021
  * Class: COSC 439
  * Professor: Dr. Tehranipour
- * Project #2
+ * Project #3
  * Client Program: Program connects to a server program. Give the client a host address, port number, and username via
  * command line arguments: -h, -p, and -u respectively; otherwise program will assume local host, port number 20750,
  * and prompt the user for a username. This class is threaded, main thread uses serverHandler method to receive
  * messages from the server. The MessageSender thread is used for user to send messages to server.
+ * Additionally communication between client-server is now encrypted. Implemention of diffie-hellman is used.
  * Important: Server must be running before you attempt to run the client program.
  */
 public class ana_TCPClient {
@@ -31,6 +32,7 @@ public class ana_TCPClient {
     /* Declare and initialize username to an empty string. Will prompt user for username if not provided. */
     private static String username = "";
     
+    /* Used to encrypt/decrypt messages. */
     private static String bytePad = "";
 
     /* Get arguments and a username; call serverHandler method. */
@@ -83,6 +85,7 @@ public class ana_TCPClient {
         PrintWriter out = new PrintWriter(link.getOutputStream(), true);
         
         /********************** HANDSHAKE **********************/
+        /* Get g and n from server. */
         BigInteger g = new BigInteger(in.readLine());
         BigInteger n = new BigInteger(in.readLine());
         
@@ -90,17 +93,20 @@ public class ana_TCPClient {
         Random rand = new Random();
         BigInteger x = new BigInteger("" + (rand.nextInt(101) + 100));
         
+        /* Send server g^xmod(n) */
         BigInteger clientPartialKey = g.modPow(x, n);
         out.println(clientPartialKey.toString());
         
-        BigInteger serverPartialKey = null;
-			serverPartialKey = new BigInteger(in.readLine());
-
+        /* Get g^ymod(n) from server. */
+        BigInteger serverPartialKey = new BigInteger(in.readLine());
         
-        BigInteger keyBig = serverPartialKey.modPow(x, n);
+        BigInteger keyBig = serverPartialKey.modPow(x, n);					// Calculate the key.
+        
+        // Convert key to a string and print it.
         String keyStr = keyBig.toString();
         System.out.println("Key: " + keyStr);
         
+        // Get byte-pad of key and print it.
         bytePad = Cryptography.getBytePad(keyStr);
         System.out.println("Byte-Pad: " + bytePad);
         /********************** END HANDSHAKE **********************/
@@ -168,10 +174,12 @@ public class ana_TCPClient {
         }
     }
     
+    /* Method is just used to simplify and make code cleaner to read. */
     public static String decryptMessage(String encryptedMessage) {
     	return Cryptography.decrypt(bytePad, encryptedMessage);
     }
     
+    /* Method is just used to simplify and make code cleaner to read. */
     public static String enryptMessage(String message) {
     	return Cryptography.encrypt(bytePad, message);
     }

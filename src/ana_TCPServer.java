@@ -7,13 +7,15 @@ import java.math.BigInteger;
 
 /*
  * Name: Abdullah Najid
- * Date: 10-21-2021
+ * 
  * Class: COSC 439
  * Professor: Dr. Tehranipour
- * Project #2
+ * Project #3
  * Server Program: Give server program a port number with argument -p otherwise server assumes a default port number.
  * Server is threaded so multiple clients can join at the same time. Server acts as a chat room for the clients. Chat
- * history is recorded in a chat file so that when new clients join they will receive the chat history.
+ * history is recorded in a chat file so that when new clients join they will receive the chat history. 
+ * Additionally messages are encrypted and decrypted using Diffie-Hellman key exchange using argument -g and -n and 
+ * bit-level encryption.
  */
 public class ana_TCPServer {
     /* Used to create socket for this server. */
@@ -72,6 +74,7 @@ public class ana_TCPServer {
     }
 
     /* Method gets a connection, creates a client handler thread for the connection, and starts the thread. */
+    /* Implements a handshake for client-server to calculate a secret key securely. Uses Cryptography class for its helper functions. */
     private static void connectionGetter() throws IOException {
         Socket link = null;
 
@@ -96,21 +99,28 @@ public class ana_TCPServer {
         out.println(g);
         out.println(n);
         
+        /* Client sends back g^xmod(n). */
         BigInteger clientPartialKey = new BigInteger(in.readLine());
         
+        /* Convert g & n to big integers for large number computations. */
         BigInteger gBig = new BigInteger(""+g);
         BigInteger nBig = new BigInteger(""+n);
         
-        /* 100 <= y <= 200 */
+        /* Generate y: 100 <= y <= 200 */
         Random rand = new Random();
         BigInteger y = new BigInteger("" + (rand.nextInt(101) + 100));
         
+        /* g^ymod(n) send to client. */
         BigInteger serverPartialKey = gBig.modPow(y, nBig);
         out.println(serverPartialKey.toString());
+       
+        BigInteger keyBig = clientPartialKey.modPow(y, nBig);				// Calculate the key.
         
-        BigInteger keyBig = clientPartialKey.modPow(y, nBig);
+        /* Convert key to a string and print it. */
         String keyStr = keyBig.toString();
         System.out.println("Key: " + keyStr);
+        
+        /* Convert keyStr to 8-bit binary "byte-pad" and print it. */
         String bytePad = Cryptography.getBytePad(keyStr);
         System.out.println("Byte-Pad: " + bytePad);
         /********************** END HANDSHAKE **********************/
@@ -122,12 +132,14 @@ public class ana_TCPServer {
         /* Create client handler thread to manage the connection. */
         ClientHandler clientHandler = new ClientHandler(link, in, out, startTime, clientUsername, hostName, bytePad);
         
+        /* Add thread to an array list so it can be referenced later. */
         createClientHandlerArrayList(clientHandler);
 
         /* Start the thread that will manage the connection to the client. */
         clientHandler.start();
     }
     
+    /* Method adds a clientHandler thread to an array list. */
     private synchronized static void createClientHandlerArrayList(ClientHandler clientHandler) throws IOException {
     	/* Determine if we need to create a chat log file;
          * file is only created if there are no client's currently connected to server.
@@ -171,6 +183,8 @@ public class ana_TCPServer {
         /*
          * Method that receives messages from client and prints them to various sources: server console, other clients,
          * and chat file. Manages closing client connection when client wants to disconnect.
+         * The messages received are all encrypted and must be decrypted to read. Messages sent are all encrypted
+         * with the clients respective bytepad.
          */
         public void run() {
             try {
@@ -285,6 +299,7 @@ public class ana_TCPServer {
         	printToClients(message);
         }
         
+        /* Method echos message to all ClientHandler threads in the array list except the current ClientHandler. */
         private synchronized void printToClients(String message) {
         	for(int i = 0; i < clientHandlerArrayList.size(); i++) {
                 ClientHandler tempClientHandler = clientHandlerArrayList.get(i);
@@ -294,11 +309,13 @@ public class ana_TCPServer {
             }
         }
         
+        /* Method is just used to simplify and make code cleaner to read. */
         private void sendEncryptedMessage(String message) {
         	String encryptedMessage = Cryptography.encrypt(bytePad, message);
         	out.println(encryptedMessage);
         }
         
+        /* Method is just used to simplify and make code cleaner to read. */
         private String getDecryptedMessage() throws IOException {
         	String encryptedMessage = in.readLine();
         	return Cryptography.decrypt(bytePad, encryptedMessage);
