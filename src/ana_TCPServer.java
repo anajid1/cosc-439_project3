@@ -59,6 +59,10 @@ public class ana_TCPServer {
                         System.exit(1);
                 }
             }
+            
+            /* Print g,n per rubric. */
+            System.out.println("g: " + g);
+            System.out.println("n: " + n);
 
             /* Create a server object. */
             serverSocket = new ServerSocket(portNumber);

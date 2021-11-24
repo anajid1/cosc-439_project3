@@ -89,6 +89,10 @@ public class ana_TCPClient {
         BigInteger g = new BigInteger(in.readLine());
         BigInteger n = new BigInteger(in.readLine());
         
+        /* Print g, n per rubric. */
+        System.out.println("g: " + g);
+        System.out.println("n: " + n);
+        
         /* 100 <= x <= 200 */
         Random rand = new Random();
         BigInteger x = new BigInteger("" + (rand.nextInt(101) + 100));
