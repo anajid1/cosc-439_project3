@@ -4,15 +4,16 @@
  * Class: COSC 439
  * Professor: Dr. Tehranipour
  * Project #3
- * Cryptography: Helper class that has methods used by both the Client and Server class.
+ * Cryptography: Helper class that has methods used by both the Client and Server class for encryption/decryption.
  */
 public class Cryptography {
 
-	/* Converts a String integer value to a binary 8-bit byte-pad. */
+	/* Converts a String integer value (key) to a binary 8-bit byte-pad. */
 	public static String getBytePad(String key) {
     	String bytePad = "";
     	int keyInt = Integer.parseInt(key);					// Convert String to an int.
     	String pad = Integer.toBinaryString(keyInt);		// Methods converts int to a binary.
+    	
     	while(pad.length() < 8) {							// Append 0's so we have a binary of length 8.
     		pad = "0" + pad;
     	}
@@ -21,9 +22,9 @@ public class Cryptography {
     	return bytePad;
     }
 	
-	/* Converts a message to encrypted binary message by xor's with bytepad. */
+	/* Converts a message to encrypted binary message by xoring with bytepad. */
 	public static String encrypt(String bytePad, String message) {
-		/* Converts each character to 8-bit binary ascii value appends them with all characters in messsage so in 
+		/* Converts each character in message to 8-bit binary ascii value concatenate them with all characters in message so in 
 		 * the end the binary message will be 8 times as long as the original message. */
 		// https://stackoverflow.com/questions/15606740/converting-a-character-to-its-binary-value
 		String binaryMessage = "";
@@ -43,7 +44,9 @@ public class Cryptography {
 		return ecryptedBinaryMessage;
 	}
 	
-	/* Returns decrypted message. */
+	/* Converts encrypted binary string to decrypted binary string by xoring with byte-pad.
+	 * Then we take decrypted binary string and convert to characters.
+	 */
 	public static String decrypt(String bytePad, String encryptedBinary) {
 		String decryptedMessage = "";
 		
@@ -53,9 +56,10 @@ public class Cryptography {
 		 * Convert each 8 bits to character and append it to decryptedMessage string.
 		 */
 		for(int i = 0; i < decryptedBinary.length(); i += 8) {
-			int charCode = Integer.parseInt((String) decryptedBinary.subSequence(i, i+8), 2);	// Convert to integer ascii value.
-			String str = new Character((char)charCode).toString();								// Convert int ascii value to a single char String.
-			decryptedMessage += str;															// Append single char string to the message.
+			/* Convert an 8 bit binary to an int ascii value. */
+			int charCode = Integer.parseInt((String) decryptedBinary.subSequence(i, i+8), 2);	// https://stackoverflow.com/a/24178434
+			char c = (char) charCode;															// Convert ascii int value to respective character.					
+			decryptedMessage += c;																// Append single char string to the message.
 		}
 		
 		return decryptedMessage;
@@ -65,9 +69,11 @@ public class Cryptography {
 	public static String xOR(String bytePad, String binaryMessage) {
 		String encryptedBinary = "";
 		
+		/* xor each 8 bits in binary message since bytepad is 8-bits long. */
 		for(int i = 0; i < binaryMessage.length(); i += 8) {
 			String binary = binaryMessage.substring(i, i+8);
 		
+			/* xor each single bit. */
 			for(int j = 0; j < bytePad.length(); j++) {
 				char x = binary.charAt(j);
 				char y = bytePad.charAt(j);
