@@ -59,10 +59,6 @@ public class ana_TCPServer {
                         System.exit(1);
                 }
             }
-            
-            /* Print g,n per rubric. */
-            System.out.println("g: " + g);
-            System.out.println("n: " + n);
 
             /* Create a server object. */
             serverSocket = new ServerSocket(portNumber);
@@ -99,6 +95,10 @@ public class ana_TCPServer {
         System.out.println("Client has established a connection to " + hostName);
         
         /********************** HANDSHAKE **********************/
+        /* Print g,n per rubric. */
+        System.out.println("g: " + g);
+        System.out.println("n: " + n);
+        
         /* Send client g and n */
         out.println(g);
         out.println(n);
